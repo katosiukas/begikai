@@ -1,0 +1,452 @@
+<!DOCTYPE HTML>
+<html xmlns:th="http://www.niekam.nieko">
+<head>
+
+    <title>Begikai pabegiojo</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/black-tie/jquery-ui.css">
+	
+<style>
+					
+		/* formos stilius */
+					
+	label, input { display:block; }
+	input.text { margin-bottom:12px; width:95%; padding: .4em; }
+	fieldset { padding:0; border:0; margin-top:25px; }
+	h1 { font-size: 1.2em; margin: .6em 0; }
+	div#users-contain { width: 350px; margin: 20px 0; }
+	div#users-contain table { margin: 1em 0; border-collapse: collapse; width: 100%; }
+	div#users-contain table td, div#users-contain table th { border: 1px solid #eee; padding: .6em 10px; text-align: left; }
+	.ui-dialog .ui-state-error { padding: .3em; }
+	.validateTips { border: 1px solid transparent; padding: 0.3em; }
+			
+	#begikui {
+		display: inline;
+	}
+	
+	table, th, td {
+  border: 1px solid black;
+}
+	
+</style>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js" 
+	integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" 
+	crossorigin="anonymous">
+</script>
+
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+	
+<script>
+
+$(document).ready ( function() {
+
+	var duomenys;
+	var id_begiko;
+	
+	pirminiaiDuomenys();
+	
+	function  PrabegtosTrasos( data_begiko ) {
+	
+		this.dataBegiko = data_begiko;
+	
+		this.begimoMetai = [];
+		
+		this.begtosTrasosPav = [];
+				
+		this.begtosTrasosLaikai = [];
+		
+		this.begtosTrasosPava = [];
+		
+		this.begtosTrasosAtst = [];
+		
+		this.res_str = '';
+		
+		this.pasiimtiMetus = function() {
+		
+			if (this.dataBegiko.length > 0) {
+				
+				for (i=0; i < this.dataBegiko.length; i++) {
+				
+					if ( this.begimoMetai.indexOf ( this.dataBegiko[i].data ) === -1 ) {
+				
+						this.begimoMetai.push ( this.dataBegiko[i].data );
+					}
+				}	
+			}
+		}
+		
+		this.pasiimtiTrasas = function() {
+		
+			for (i=0; i < this.dataBegiko.length; i++) {
+
+				pozicija = this.begimoMetai.indexOf ( this.dataBegiko[i].data ); 
+						
+				pav_ats =  this.dataBegiko[i].pav + '_'+ this.dataBegiko[i].atstumas;
+				
+				if ( ( kuri_yra = this.begtosTrasosPav.indexOf ( pav_ats ) ) === -1 ) {
+		
+					laikai = []; 
+					
+					for ( t =0; t < this.begimoMetai.length; t++ ) {
+
+						laikai.push( '' );
+					}
+					laikai [ pozicija ] = this.dataBegiko[i].laikas;
+					
+					this.begtosTrasosPav.push ( pav_ats );
+					this.begtosTrasosLaikai.push ( laikai );
+					this.begtosTrasosPava.push( this.dataBegiko[i].pav );
+					this.begtosTrasosAtst.push ( this.dataBegiko[i].atstumas );
+														
+				} else {
+				
+					this.begtosTrasosLaikai [ kuri_yra ] [ pozicija ] = this.dataBegiko[i].laikas;
+				}
+			}
+		
+		}
+		
+		
+		
+		this.lentelesHtml = function() {
+		
+			this.res_str += '<table align="center">'
+				+ '<tr><th>Trasa \\ Bėgimo metai</th>' 	
+
+			this.begimoMetai.sort();
+						
+			for ( metai in this.begimoMetai ) {
+			
+				this.res_str += '<th>' + this.begimoMetai[metai] + '</th>';
+			}
+			
+			this.res_str += '</tr>';
+			
+			antraste_atstumo = '';
+			
+			for ( i = 0; i < this.begtosTrasosPav.length; i++ ) {
+			
+				if (antraste_atstumo != this.begtosTrasosAtst[i]) {
+				
+					antraste_atstumo = this.begtosTrasosAtst[i];
+					
+					this.res_str += '<tr><th></th><th colspan="5">' + antraste_atstumo + '</th></tr>';		
+						
+				}
+
+				this.res_str += '<tr><th>' + this.begtosTrasosPava [ i ] + '</th><td>' + this.begtosTrasosLaikai[ i ].join ( '</td><td>' )  + '</td></tr>'; 
+
+			}
+				
+		}
+	
+		this.res_str += '</table>';
+	}
+	
+	var prab_trasos;
+	
+	
+	function pirminiaiDuomenys() {
+	
+		$.ajax({
+				
+			url: "http://localhost:8080/restfull/pradzia" 
+														
+		})
+			
+		.done(	function( data ) {
+		
+			duomenys = data;
+			
+			for ( i = 0; i < data.begikai.length; i++) {
+	
+				$( 'select#dropdown' ).append(  '<option value="' + data.begikai [ i ].id + '">' + data.begikai [ i ].pav + '</option>');
+				$( 'select#dropdownbegiko' ).append(  '<option value="' + data.begikai [ i ].id + '">' + data.begikai [ i ].pav + '</option>');
+			}
+		
+			for ( i = 0; i < data.trasos.length; i++) {
+	
+				$( 'select#dropdowntrasos' ).append(  '<option value="' + data.trasos [ i ].id + '">' + data.trasos [ i ].pav + '</option>');
+			}
+		
+		});
+	
+	}
+
+	$( "#dropdown" ).selectmenu({
+		
+		select: function( event, data ) {
+				
+			id_begiko = $( '#dropdown' ).val();
+			pasiimtiAtaskaita(id_begiko);
+		
+		}
+	});
+		
+	function pasiimtiAtaskaita(id) {
+				
+		$.ajax({
+				
+			url: "http://localhost:8080/restfull/ataskaita?begikas_id=" + id 
+														
+		})
+			
+		.done(	function( data ) {	
+		
+			for (i=0; i < data.length; i++) {	
+			
+				atstumas = data[i].atstumas;
+				laikas = data[i].laikas;
+				valandos = '00';
+				minutes = '00';
+				sekundes = '00';
+			
+				if (laikas > 3600) { valandos = parseInt(laikas / 3600); }	
+			
+				if ((laikas % 3600) > 0) { 
+				
+					minutes = parseInt((laikas - (valandos * 3600)) / 60);
+										
+					if (minutes < 10) { minutes = '0' + minutes; }
+
+					minutes_tarp = parseInt((laikas - (valandos * 3600)) / 60);
+				 
+					if (((laikas - (valandos * 3600)) % 60) > 0) {
+					
+						sekundes = laikas - (valandos * 3600);
+						sekundes = sekundes - (minutes_tarp *60);
+					}	
+					
+					if (sekundes < 10 && sekundes != 0) { sekundes = '0' + sekundes; }
+				}
+									
+				laikrodis = valandos + ':' + minutes + ':' + sekundes;
+				
+				data[i].laikas = laikrodis;
+				data[i].atstumas = atstumas + 'm';
+			}
+							
+			prab_trasos = new PrabegtosTrasos ( data );
+			
+			prab_trasos.pasiimtiMetus();
+			prab_trasos.pasiimtiTrasas();
+			prab_trasos.lentelesHtml();
+	
+			$( '#ataskaita' ).html ( prab_trasos.res_str );
+		});
+	}			
+	
+
+	itrauktibegika = $( "#dialog-itrauktinaujabegika" ).dialog({
+		autoOpen: false,
+		height: 400,
+		width: 400,
+		modal: true,
+		buttons: {
+        "Įtraukti": add_begikas,
+        Uždaryti: function() {
+         itrauktibegika.dialog( "close" );
+        }
+		},
+	});	
+
+	function add_begikas() {
+
+		naujas_begikas = {
+				
+			vardas: $( '#vardas' ).val()
+			, metai: $( '#metai' ).val() 
+					
+		}
+									
+		params_str = 
+	
+			"pav="  + naujas_begikas.vardas 
+			+ '&metai=' + naujas_begikas.metai 
+										
+		$.ajax({
+			
+			url: "http://localhost:8080/restfull/prideti_begika?" + params_str
+		})
+	
+		.done( function( data ) {
+				
+			pasiimtiAtaskaita(id_begiko);
+			
+		});
+		
+		itrauktibegika.dialog( "close" );
+
+	}
+
+	itrauktitrasa = $( "#dialog-itrauktinaujatrasa" ).dialog({
+		autoOpen: false,
+		height: 400,
+		width: 400,
+		modal: true,
+		buttons: {
+        "Įtraukti": add_trasa,
+        Uždaryti: function() {
+         itrauktitrasa.dialog( "close" );
+        }
+		},
+	});	
+	
+	function add_trasa() {
+
+		nauja_trasa = {
+				
+			pavadinimas: $( '#pavadinimas' ).val()
+			, ilgis: $( '#ilgis' ).val() 
+					
+		}
+									
+		params_str = 
+	
+			"pav="  + nauja_trasa.pavadinimas
+			+ '&ilgis=' + nauja_trasa.ilgis 
+										
+		$.ajax({
+			
+			url: "http://localhost:8080/restfull/prideti_trasa?" + params_str
+		})
+	
+		.done( function( data ) {
+				
+			pasiimtiAtaskaita(id_begiko);
+			
+		});
+		
+		itrauktitrasa.dialog( "close" );
+
+	}
+	
+	begtatrasa = $( "#dialog-itrauktibegtatrasa" ).dialog({
+		autoOpen: false,
+		height: 410,
+		width: 420,
+		modal: true,
+		buttons: {
+        "Įtraukti": add_begtatrasa,
+        Uždaryti: function() {
+         begtatrasa.dialog( "close" );
+        }
+		},
+	});	
+
+	function add_begtatrasa() {
+
+		begiko_pav = $( '#dropdownbegiko' ).val();
+		trasos_pav = $( '#dropdowntrasos' ).val();
+					
+		begta_trasa = {
+				
+			begikas: begiko_pav
+			, trasa: trasos_pav 
+			, data: $( '#data' ).val()
+			, atstumas: $( '#atstumas' ).val()
+			, laikas: $( '#laikas' ).val()
+					
+		}
+									
+		params_str = 
+	
+			"begikas_id="  + begta_trasa.begikas
+			+ '&trasa_id=' + begta_trasa.trasa 
+			+ '&data=' + begta_trasa.data
+			+ '&atstumas=' + begta_trasa.atstumas
+			+ '&laikas=' + begta_trasa.laikas
+										
+		$.ajax({
+			
+			url: "http://localhost:8080/restfull/prideti_begta_trasa?" + params_str
+		})
+	
+		.done( function( data ) {
+					
+			pasiimtiAtaskaita(id_begiko);		
+					
+		});
+		
+		begtatrasa.dialog( "close" );
+
+	}
+
+	$( "#itraukti_begika" ).on( "click", function() { itrauktibegika.dialog("open") });
+	$( "#itraukti_trasa" ).on( "click", function() { itrauktitrasa.dialog("open") });
+	$( "#itraukti_begtatrasa" ).on( "click", function() { begtatrasa.dialog("open") });
+
+});
+
+</script>
+</head>
+
+<body>
+
+<label id="begikui" for="dropdown">Pasirinkite bėgiką:</label>
+	<select name="begikas_drop" id="dropdown"></select>
+		
+	
+<div id="dialog-itrauktinaujabegika" title="Itraukti naują bėgiką">
+	<form>
+    <fieldset>
+	
+		<label for="vardas">Vardas</label>
+		<input type="text" name="vardas" id="vardas" value="" class="text">
+	  
+		<label for="metai">Metai</label>
+		<input type="text" name="metai" id="metai" value="" class="text">
+	   
+		<input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+	</form>
+</div>
+
+<div id="dialog-itrauktinaujatrasa" title="Itraukti naują trasą">
+	<form>
+    <fieldset>
+	
+		<label for="pavadinimas">Pavadinimas</label>
+		<input type="text" name="pavadinimas" id="pavadinimas" value="" class="text">
+	  
+		<label for="ilgis">Ilgis</label>
+		<input type="text" name="ilgis" id="ilgis" value="" class="text">
+	   
+		<input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+	</form>
+</div>
+
+<div id="dialog-itrauktibegtatrasa" title="Itraukti bėgtą trasą">
+	<form>
+    <fieldset>
+	
+		<label id="begikui" for="dropdownbegiko">Bėgikas</label>
+		<select name="begikas_drop" id="dropdownbegiko"></select>
+	  
+		<label id="begikui" for="dropdowntrasos">Trasa</label>
+		<select name="trasa_drop" id="dropdowntrasos"></select>
+		
+		<label for="data">Data</label>
+		<input type="text" name="data" id="data" value="" class="text">
+		
+		<label for="atstumas">Atstumas</label>
+		<input type="text" name="atstumas" id="atstumas" value="" class="text">
+		
+		<label for="laikas">Laikas</label>
+		<input type="text" name="laikas" id="laikas" value="" class="text">
+	   
+		<input type="submit" tabindex="-1" style="position:absolute; top:-1000px">
+    </fieldset>
+	</form>
+</div>
+
+<div id="ataskaita"></div>
+
+<p><label for="itraukti_begika"></label><input class="itraukti_begika" type="button" value="Itraukti naują bėgiką" id="itraukti_begika" title="Itraukti naują bėgiką"></p>
+<p><label for="itraukti_trasa"></label><input class="itraukti_trasa" type="button" value="Itraukti naują trasą" id="itraukti_trasa" title="Itraukti naują trasą"></p>
+<p><label for="itraukti_begtatrasa"></label><input class="itraukti_begtatrasa" type="button" value="Itraukti bėgtą trasą" id="itraukti_begtatrasa" title="Itraukti bėgtą trasą"></p>
+
+</body>
+</html>
